@@ -4047,7 +4047,7 @@
     },
     "load-opportunities": {
       "title": "Opportunities",
-      "description": "These optimizations can speed up your page load."
+      "description": "These optimizations can speed up your page load, but do not directly affect your performance score."
     },
     "budgets": {
       "title": "Budgets",
@@ -4055,7 +4055,7 @@
     },
     "diagnostics": {
       "title": "Diagnostics",
-      "description": "More information about the performance of your application."
+      "description": "More information about the performance of your application that does not directly affect your performance score."
     },
     "pwa-fast-reliable": {
       "title": "Fast and reliable"
@@ -5112,7 +5112,7 @@
       "snippetExpandButtonLabel": "Expand snippet",
       "thirdPartyResourcesLabel": "Show 3rd-party resources",
       "toplevelWarningsMessage": "There were issues affecting this run of Lighthouse:",
-      "varianceDisclaimer": "Values are estimated and may vary.",
+      "varianceDisclaimer": "Values are estimated and may vary. The metrics here are the only factors affecting the performance score.",
       "warningAuditsGroupTitle": "Passed audits but with warnings",
       "warningHeader": "Warnings: "
     },
