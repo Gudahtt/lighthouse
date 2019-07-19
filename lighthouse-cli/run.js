@@ -26,15 +26,20 @@ const _RUNTIME_ERROR_CODE = 1;
 const _PROTOCOL_TIMEOUT_EXIT_CODE = 67;
 
 /**
- * exported for testing
+ * Parse Chrome Flags string using yargs into individual arguments, so they can be passed to
+ * chrome-launcher.
+ * The flags are scanned for any disabled default flags (specified as `${flag}=false`). If any
+ * default flags are disabled, we ignore all default flags then add back any default flags that
+ * were not disabled.
+ * This function is exported for testing.
  * @param {string} flags
- * @return {Array<string>}
+ * @return {{chromeFlags: Array<string>, ignoreDefaultFlags: boolean}}
  */
 function parseChromeFlags(flags = '') {
   const parsed = yargsParser(
       flags.trim(), {configuration: {'camel-case-expansion': false, 'boolean-negation': false}});
 
-  return Object
+  let chromeFlags = Object
       .keys(parsed)
       // Remove unnecessary _ item provided by yargs,
       .filter(key => key !== '_')
@@ -46,6 +51,31 @@ function parseChromeFlags(flags = '') {
         // see https://github.com/GoogleChrome/lighthouse/issues/3744
         return `--${key}=${parsed[key]}`;
       });
+
+  const defaultFlags = ChromeLauncher.Launcher.defaultFlags();
+  const excludedDefaultFlags = defaultFlags
+      .filter(flag => chromeFlags.includes(`${flag}=false`));
+  const includedDefaultFlags = defaultFlags
+      .filter(flag => !excludedDefaultFlags.includes(flag));
+  const ignoreDefaultFlags = includedDefaultFlags.length !== defaultFlags.length;
+
+  if (ignoreDefaultFlags) {
+    chromeFlags = chromeFlags
+      .filter(flag => {
+        // The flag wasn't an ignored default, let it through.
+        if (!flag.endsWith('=false')) return true;
+        // Keep the flag if it's not a negated default.
+        const flagWithoutNegation = flag.replace(/=false$/, '');
+        return !defaultFlags.includes(flagWithoutNegation);
+      });
+    // Add non-disabled defaults first to prevent them from being overridden
+    chromeFlags = [...includedDefaultFlags, ...chromeFlags];
+  }
+
+  return {
+    chromeFlags,
+    ignoreDefaultFlags,
+  };
 }
 
 /**
@@ -55,10 +85,13 @@ function parseChromeFlags(flags = '') {
  * @return {Promise<ChromeLauncher.LaunchedChrome>}
  */
 function getDebuggableChrome(flags) {
+  const {chromeFlags, ignoreDefaultFlags} = parseChromeFlags(flags.chromeFlags);
+
   return ChromeLauncher.launch({
     port: flags.port,
-    chromeFlags: parseChromeFlags(flags.chromeFlags),
+    chromeFlags,
     logLevel: flags.logLevel,
+    ignoreDefaultFlags,
   });
 }
 
